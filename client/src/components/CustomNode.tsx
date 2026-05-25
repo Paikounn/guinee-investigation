@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Handle, Position, NodeProps } from '@xyflow/react'
+import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
 import { User, Car, Building2, MapPin, Package } from 'lucide-react'
 import { NodeType } from '../types'
 
@@ -107,7 +107,7 @@ function getSubtitle(nodeType: NodeType, data: Record<string, unknown>): string 
   }
 }
 
-function CustomNodeComponent({ data, selected }: NodeProps<FlowNodeData>) {
+function CustomNodeComponent({ data, selected }: NodeProps<Node<FlowNodeData>>) {
   const cfg = NODE_CONFIG[data.nodeType] ?? NODE_CONFIG.PERSON
   const Icon = cfg.icon
   const subtitle = getSubtitle(data.nodeType, data.nodeData)
