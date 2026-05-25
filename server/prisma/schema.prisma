@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Corps {
+  POLICE
+  GENDARMERIE
+  DOUANE
+}
+
+enum Role {
+  ADMIN
+  INVESTIGATOR
+  ANALYST
+}
+
+enum CaseStatus {
+  OPEN
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum NodeType {
+  PERSON
+  VEHICLE
+  ORGANIZATION
+  LOCATION
+  CONTAINER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  corps     Corps
+  role      Role     @default(INVESTIGATOR)
+  grade     String?
+  matricule String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cases        CaseMember[]
+  createdCases Case[]
+}
+
+model Case {
+  id          String     @id @default(cuid())
+  reference   String     @unique
+  title       String
+  description String?
+  status      CaseStatus @default(OPEN)
+  corps       Corps
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+
+  members CaseMember[]
+  nodes   Node[]
+  edges   Edge[]
+}
+
+model CaseMember {
+  id     String @id @default(cuid())
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId String
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@unique([caseId, userId])
+}
+
+model Node {
+  id        String   @id @default(cuid())
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId    String
+  type      NodeType
+  label     String
+  data      Json     @default("{}")
+  positionX Float    @default(0)
+  positionY Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sourceEdges Edge[] @relation("sourceEdges")
+  targetEdges Edge[] @relation("targetEdges")
+}
+
+model Edge {
+  id        String   @id @default(cuid())
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId    String
+  source    Node     @relation("sourceEdges", fields: [sourceId], references: [id], onDelete: Cascade)
+  sourceId  String
+  target    Node     @relation("targetEdges", fields: [targetId], references: [id], onDelete: Cascade)
+  targetId  String
+  label     String?
+  edgeType  String   @default("default")
+  data      Json?
+  createdAt DateTime @default(now())
+}
