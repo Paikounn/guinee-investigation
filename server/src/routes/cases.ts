@@ -47,7 +47,7 @@ router.post('/', async (req: AuthRequest, res) => {
 router.get('/:id', async (req: AuthRequest, res) => {
   const { corps, role } = req.user!
   const case_ = await prisma.case.findFirst({
-    where: { id: req.params.id, ...(role === 'ADMIN' ? {} : { corps: corps as any }) },
+    where: { id: req.params.id as string, ...(role === 'ADMIN' ? {} : { corps: corps as any }) },
     include: {
       nodes: true,
       edges: true,
@@ -62,7 +62,7 @@ router.patch('/:id', async (req: AuthRequest, res) => {
   try {
     const { status, title, description } = req.body
     const case_ = await prisma.case.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: { status, title, description },
     })
     res.json(case_)
@@ -73,7 +73,7 @@ router.patch('/:id', async (req: AuthRequest, res) => {
 
 router.delete('/:id', async (req: AuthRequest, res) => {
   if (req.user!.role !== 'ADMIN') return res.status(403).json({ error: 'Accès refusé' })
-  await prisma.case.delete({ where: { id: req.params.id } })
+  await prisma.case.delete({ where: { id: req.params.id as string } })
   res.json({ ok: true })
 })
 
