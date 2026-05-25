@@ -12,7 +12,6 @@ import {
   type Connection,
   type Node as FlowNode,
   type Edge as FlowEdge,
-  type NodeDragHandler,
   type OnConnect,
   type OnNodesDelete,
   type OnEdgesDelete,
@@ -186,8 +185,8 @@ function CanvasContent() {
 
   // ─── drag stop → save position ───────────────────────────────────────────────
 
-  const onNodeDragStop: NodeDragHandler = useCallback(
-    async (_event, node) => {
+  const onNodeDragStop = useCallback(
+    async (_event: React.MouseEvent, node: FlowNode) => {
       if (!caseId) return
       try {
         await api.patch(`/cases/${caseId}/nodes/${node.id}`, {
