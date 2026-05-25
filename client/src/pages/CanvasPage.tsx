@@ -186,11 +186,7 @@ function CanvasContent() {
   // ─── drag stop → save position ───────────────────────────────────────────────
 
   const onNodeDragStop = useCallback(
-<<<<<<< HEAD
-    async (_event: React.MouseEvent, node: FlowNode) => {
-=======
     async (_event: ReactMouseEvent, node: FlowNode<FlowNodeData>) => {
->>>>>>> 91da015 (fix: resolve all TypeScript build errors for Railway deployment)
       if (!caseId) return
       try {
         await api.patch(`/cases/${caseId}/nodes/${node.id}`, {

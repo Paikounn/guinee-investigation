@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-import { memo } from 'react'
-import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
-=======
 import { memo, type ElementType } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
->>>>>>> 91da015 (fix: resolve all TypeScript build errors for Railway deployment)
 import { User, Car, Building2, MapPin, Package } from 'lucide-react'
 import { NodeType } from '../types'
 
@@ -100,12 +95,8 @@ function getSubtitle(nodeType: NodeType, data: Record<string, unknown>): string 
   }
 }
 
-<<<<<<< HEAD
-function CustomNodeComponent({ data, selected }: NodeProps<Node<FlowNodeData>>) {
-=======
 function CustomNodeComponent({ data: rawData, selected }: NodeProps) {
   const data = rawData as FlowNodeData
->>>>>>> 91da015 (fix: resolve all TypeScript build errors for Railway deployment)
   const cfg = NODE_CONFIG[data.nodeType] ?? NODE_CONFIG.PERSON
   const Icon = cfg.icon
   const subtitle = getSubtitle(data.nodeType, data.nodeData)
