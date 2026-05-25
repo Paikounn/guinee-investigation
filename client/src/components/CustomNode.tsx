@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import { memo } from 'react'
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
+=======
+import { memo, type ElementType } from 'react'
+import { Handle, Position, type NodeProps } from '@xyflow/react'
+>>>>>>> 91da015 (fix: resolve all TypeScript build errors for Railway deployment)
 import { User, Car, Building2, MapPin, Package } from 'lucide-react'
 import { NodeType } from '../types'
 
@@ -9,7 +14,10 @@ export interface FlowNodeData extends Record<string, unknown> {
   nodeData: Record<string, unknown>
 }
 
-const NODE_CONFIG: Record<NodeType, { icon: React.ElementType; bg: string; border: string; text: string; accent: string }> = {
+const NODE_CONFIG: Record<
+  NodeType,
+  { icon: ElementType; bg: string; border: string; text: string; accent: string }
+> = {
   PERSON: {
     icon: User,
     bg: 'bg-blue-50',
@@ -50,64 +58,54 @@ const NODE_CONFIG: Record<NodeType, { icon: React.ElementType; bg: string; borde
 function getSubtitle(nodeType: NodeType, data: Record<string, unknown>): string {
   switch (nodeType) {
     case 'PERSON': {
-      const role = data.role as string | undefined
       const roleMap: Record<string, string> = {
-        SUSPECT: 'Suspect',
-        VICTIME: 'Victime',
-        TEMOIN: 'Témoin',
-        COMPLICE: 'Complice',
-        AUTRE: 'Autre',
+        SUSPECT: 'Suspect', VICTIME: 'Victime', TEMOIN: 'Témoin',
+        COMPLICE: 'Complice', AUTRE: 'Autre',
       }
-      return role ? roleMap[role] ?? role : ''
+      const role = data.role as string | undefined
+      return role ? (roleMap[role] ?? role) : ''
     }
     case 'VEHICLE': {
-      const t = data.type as string | undefined
       const typeMap: Record<string, string> = {
-        VOITURE: 'Voiture',
-        CAMION: 'Camion',
-        MOTO: 'Moto',
-        BATEAU: 'Bateau',
-        AVION: 'Avion',
-        AUTRE: 'Autre',
+        VOITURE: 'Voiture', CAMION: 'Camion', MOTO: 'Moto',
+        BATEAU: 'Bateau', AVION: 'Avion', AUTRE: 'Autre',
       }
-      return t ? typeMap[t] ?? t : ''
+      const t = data.type as string | undefined
+      return t ? (typeMap[t] ?? t) : ''
     }
     case 'ORGANIZATION': {
-      const t = data.type as string | undefined
       const typeMap: Record<string, string> = {
-        RESEAU: 'Réseau',
-        ENTREPRISE: 'Entreprise',
-        ASSOCIATION: 'Association',
-        AUTRE: 'Autre',
+        RESEAU: 'Réseau', ENTREPRISE: 'Entreprise',
+        ASSOCIATION: 'Association', AUTRE: 'Autre',
       }
-      return t ? typeMap[t] ?? t : ''
+      const t = data.type as string | undefined
+      return t ? (typeMap[t] ?? t) : ''
     }
     case 'LOCATION': {
-      const t = data.type as string | undefined
       const typeMap: Record<string, string> = {
-        DOMICILE: 'Domicile',
-        BUREAU: 'Bureau',
-        FRONTIERE: 'Frontière',
-        PORT: 'Port',
-        AEROPORT: 'Aéroport',
-        AUTRE: 'Autre',
+        DOMICILE: 'Domicile', BUREAU: 'Bureau', FRONTIERE: 'Frontière',
+        PORT: 'Port', AEROPORT: 'Aéroport', AUTRE: 'Autre',
       }
-      return t ? typeMap[t] ?? t : ''
+      const t = data.type as string | undefined
+      return t ? (typeMap[t] ?? t) : ''
     }
     case 'CONTAINER': {
-      const status = data.status as string | undefined
       const statusMap: Record<string, string> = {
-        EN_TRANSIT: 'En transit',
-        SAISI: 'Saisi',
-        DEDOUANE: 'Dédouané',
-        INSPECTE: 'Inspecté',
+        EN_TRANSIT: 'En transit', SAISI: 'Saisi',
+        DEDOUANE: 'Dédouané', INSPECTE: 'Inspecté',
       }
-      return status ? statusMap[status] ?? status : ''
+      const s = data.status as string | undefined
+      return s ? (statusMap[s] ?? s) : ''
     }
   }
 }
 
+<<<<<<< HEAD
 function CustomNodeComponent({ data, selected }: NodeProps<Node<FlowNodeData>>) {
+=======
+function CustomNodeComponent({ data: rawData, selected }: NodeProps) {
+  const data = rawData as FlowNodeData
+>>>>>>> 91da015 (fix: resolve all TypeScript build errors for Railway deployment)
   const cfg = NODE_CONFIG[data.nodeType] ?? NODE_CONFIG.PERSON
   const Icon = cfg.icon
   const subtitle = getSubtitle(data.nodeType, data.nodeData)

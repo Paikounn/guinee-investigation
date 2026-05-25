@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -186,7 +186,11 @@ function CanvasContent() {
   // ─── drag stop → save position ───────────────────────────────────────────────
 
   const onNodeDragStop = useCallback(
+<<<<<<< HEAD
     async (_event: React.MouseEvent, node: FlowNode) => {
+=======
+    async (_event: ReactMouseEvent, node: FlowNode<FlowNodeData>) => {
+>>>>>>> 91da015 (fix: resolve all TypeScript build errors for Railway deployment)
       if (!caseId) return
       try {
         await api.patch(`/cases/${caseId}/nodes/${node.id}`, {
