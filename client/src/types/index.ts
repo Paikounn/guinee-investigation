@@ -2,6 +2,7 @@ export type Corps = 'POLICE' | 'GENDARMERIE' | 'DOUANE'
 export type UserRole = 'ADMIN' | 'INVESTIGATOR' | 'ANALYST'
 export type CaseStatus = 'OPEN' | 'ACTIVE' | 'CLOSED' | 'ARCHIVED'
 export type NodeType = 'PERSON' | 'VEHICLE' | 'ORGANIZATION' | 'LOCATION' | 'CONTAINER'
+export type Language = 'fr' | 'en'
 
 export interface User {
   id: string
