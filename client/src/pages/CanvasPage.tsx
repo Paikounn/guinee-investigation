@@ -33,6 +33,7 @@ import {
 
 import { api } from '../lib/api'
 import { useAuthStore } from '../stores/authStore'
+import { useLanguage } from '../contexts/LanguageContext'
 import { useCollaboration } from '../hooks/useCollaboration'
 import { exportToSVG } from '../utils/exportSVG'
 import { nodeTypes, type FlowNodeData } from '../components/CustomNode'
@@ -65,17 +66,7 @@ function dbEdgeToFlow(e: DBEdge): FlowEdge {
   }
 }
 
-// ─── node palette config ───────────────────────────────────────────────────────
-
-const PALETTE: { type: NodeType; label: string; icon: React.ElementType; color: string }[] = [
-  { type: 'PERSON',       label: 'Personne',     icon: User,      color: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
-  { type: 'VEHICLE',      label: 'Véhicule',     icon: Car,       color: 'bg-amber-100 text-amber-700 hover:bg-amber-200' },
-  { type: 'ORGANIZATION', label: 'Organisation', icon: Building2, color: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
-  { type: 'LOCATION',     label: 'Lieu',         icon: MapPin,    color: 'bg-green-100 text-green-700 hover:bg-green-200' },
-  { type: 'CONTAINER',    label: 'Conteneur',    icon: Package,   color: 'bg-orange-100 text-orange-700 hover:bg-orange-200' },
-]
-
-// ─── main export (wraps with provider) ────────────────────────────────────────
+// ─── main export ──────────────────────────────────────────────────────────────
 
 export default function CanvasPage() {
   return <CanvasContent />
@@ -87,6 +78,7 @@ function CanvasContent() {
   const { caseId } = useParams<{ caseId: string }>()
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const { t } = useLanguage()
 
   const canvasRef = useRef<HTMLDivElement>(null)
 
@@ -96,6 +88,15 @@ function CanvasContent() {
   const [addingType, setAddingType] = useState<NodeType | null>(null)
   const [addForm, setAddForm] = useState({ label: '' })
   const [addLoading, setAddLoading] = useState(false)
+
+  // Node palette — labels from i18n
+  const PALETTE: { type: NodeType; icon: React.ElementType; color: string }[] = [
+    { type: 'PERSON',       icon: User,      color: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200' },
+    { type: 'VEHICLE',      icon: Car,       color: 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200' },
+    { type: 'ORGANIZATION', icon: Building2, color: 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200' },
+    { type: 'LOCATION',     icon: MapPin,    color: 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' },
+    { type: 'CONTAINER',    icon: Package,   color: 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200' },
+  ]
 
   // ─── load case data ──────────────────────────────────────────────────────────
 
@@ -318,20 +319,22 @@ function CanvasContent() {
   const status = caseData?.status ? STATUS_CONFIG[caseData.status] : null
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
-      {/* Top bar */}
-      <div className="h-12 flex-shrink-0 bg-white border-b border-gray-200 flex items-center gap-3 px-4">
+    <div className="h-screen flex flex-col bg-slate-100">
+      {/* ── Top bar ─────────────────────────────────────────────────────── */}
+      <div className="h-14 flex-shrink-0 bg-white border-b border-slate-200 flex items-center gap-3 px-4 shadow-sm">
         <button
           onClick={() => navigate('/cases')}
-          className="flex items-center gap-1.5 text-gray-500 hover:text-gray-800 text-sm transition-colors"
+          className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 text-sm transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
-          Affaires
+          <span className="hidden sm:inline">{t.canvas.backToCases}</span>
         </button>
-        <div className="w-px h-5 bg-gray-200" />
+        <div className="w-px h-5 bg-slate-200" />
+
+        {/* Case info */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span className="text-xs text-gray-400 font-mono">{caseData?.reference}</span>
-          <span className="font-semibold text-gray-900 text-sm truncate">{caseData?.title}</span>
+          <span className="text-xs text-slate-400 font-mono hidden sm:inline">{caseData?.reference}</span>
+          <span className="font-semibold text-slate-900 text-sm truncate">{caseData?.title}</span>
           {status && (
             <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${status.color}`}>
               {status.label}
@@ -343,6 +346,8 @@ function CanvasContent() {
             </span>
           )}
         </div>
+
+        {/* Right controls */}
         <div className="flex items-center gap-3 ml-auto">
           {/* Collab users */}
           {collabUsers.length > 0 && (
@@ -359,33 +364,37 @@ function CanvasContent() {
               ))}
             </div>
           )}
+
           {/* Connection status */}
           <div
-            className={`flex items-center gap-1 text-xs ${connected ? 'text-green-600' : 'text-gray-400'}`}
-            title={connected ? 'Connecté en temps réel' : 'Non connecté'}
+            className={`flex items-center gap-1 text-xs ${connected ? 'text-green-600' : 'text-slate-400'}`}
+            title={connected ? t.canvas.connected : t.canvas.disconnected}
           >
             {connected ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
           </div>
+
+          {/* Export */}
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-gray-300 px-2.5 py-1 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 px-2.5 py-1.5 rounded-lg transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
-            SVG
+            <span className="hidden sm:inline">{t.canvas.exportSVG}</span>
           </button>
         </div>
       </div>
 
-      {/* Body */}
+      {/* ── Body ────────────────────────────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
+
         {/* Left sidebar */}
-        <div className="w-56 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
-          <div className="px-3 py-3 border-b border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              Ajouter un nœud
+        <div className="w-52 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col shadow-sm">
+          <div className="px-3 py-3 border-b border-slate-100">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2.5">
+              {t.canvas.addNode}
             </p>
             <div className="space-y-1">
-              {PALETTE.map(({ type, label, icon: Icon, color }) => (
+              {PALETTE.map(({ type, icon: Icon, color }) => (
                 <button
                   key={type}
                   onClick={() => {
@@ -393,10 +402,12 @@ function CanvasContent() {
                     setSelectedNode(null)
                     setAddForm({ label: '' })
                   }}
-                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${color} ${addingType === type ? 'ring-2 ring-offset-1 ring-blue-400' : ''}`}
+                  className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${color} ${
+                    addingType === type ? 'ring-2 ring-offset-1 ring-guinea-red' : ''
+                  }`}
                 >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  {label}
+                  <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                  {t.canvas.nodeTypes[type]}
                 </button>
               ))}
             </div>
@@ -404,14 +415,15 @@ function CanvasContent() {
 
           {/* Add form */}
           {addingType && (
-            <form onSubmit={handleAddNode} className="px-3 py-3 border-b border-gray-100 space-y-2">
-              <p className="text-xs font-medium text-gray-600">
-                Nouveau : {PALETTE.find((p) => p.type === addingType)?.label}
+            <form onSubmit={handleAddNode} className="px-3 py-3 border-b border-slate-100 space-y-2">
+              <p className="text-xs font-medium text-slate-600">
+                {t.canvas.newNode}: {t.canvas.nodeTypes[addingType]}
               </p>
               <input
                 autoFocus
-                className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Nom / identifiant"
+                className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:border-transparent bg-white"
+                style={{ '--tw-ring-color': '#CE1126' } as React.CSSProperties}
+                placeholder={t.canvas.nameLabel}
                 value={addForm.label}
                 onChange={(e) => setAddForm({ label: e.target.value })}
               />
@@ -419,17 +431,18 @@ function CanvasContent() {
                 <button
                   type="button"
                   onClick={() => setAddingType(null)}
-                  className="flex-1 border border-gray-200 text-gray-500 py-1.5 rounded-lg text-xs hover:bg-gray-50"
+                  className="flex-1 border border-slate-200 text-slate-500 py-1.5 rounded-lg text-xs hover:bg-slate-50 transition-colors"
                 >
-                  Annuler
+                  {t.canvas.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={addLoading || !addForm.label.trim()}
-                  className="flex-1 bg-blue-600 disabled:opacity-50 text-white py-1.5 rounded-lg text-xs flex items-center justify-center gap-1"
+                  className="flex-1 text-white py-1.5 rounded-lg text-xs flex items-center justify-center gap-1 disabled:opacity-50 transition-all"
+                  style={{ background: 'linear-gradient(135deg, #CE1126, #A50D1E)' }}
                 >
                   <Plus className="w-3 h-3" />
-                  {addLoading ? '…' : 'Ajouter'}
+                  {addLoading ? t.canvas.adding : t.canvas.add}
                 </button>
               </div>
             </form>
@@ -437,11 +450,11 @@ function CanvasContent() {
 
           {/* Case members */}
           {caseData?.members && caseData.members.length > 0 && (
-            <div className="px-3 py-3 mt-auto border-t border-gray-100">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                Enquêteurs
+            <div className="px-3 py-3 mt-auto border-t border-slate-100">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2.5">
+                {t.canvas.investigators}
               </p>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {caseData.members.map((m) => {
                   const cfg = CORPS_CONFIG[m.user.corps]
                   const isMe = m.user.id === user?.id
@@ -450,9 +463,9 @@ function CanvasContent() {
                       <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${cfg.bg}`}>
                         {m.user.name.charAt(0).toUpperCase()}
                       </div>
-                      <span className="text-xs text-gray-700 truncate">
+                      <span className="text-xs text-slate-700 truncate">
                         {m.user.name}
-                        {isMe && <span className="text-gray-400 ml-1">(moi)</span>}
+                        {isMe && <span className="text-slate-400 ml-1">{t.canvas.me}</span>}
                       </span>
                     </div>
                   )
@@ -479,7 +492,7 @@ function CanvasContent() {
             fitView
             deleteKeyCode="Delete"
             multiSelectionKeyCode="Shift"
-            className="bg-gray-50"
+            className="bg-slate-50"
           >
             <Background color="#e2e8f0" gap={20} />
             <Controls />
@@ -506,7 +519,7 @@ function CanvasContent() {
 
         {/* Right panel — selected node */}
         {selectedNode && (
-          <div className="w-72 flex-shrink-0 bg-white border-l border-gray-200 overflow-hidden flex flex-col">
+          <div className="w-72 flex-shrink-0 bg-white border-l border-slate-200 overflow-hidden flex flex-col shadow-sm">
             <NodePanel
               node={selectedNode}
               onClose={() => setSelectedNode(null)}

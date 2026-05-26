@@ -1,11 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Re-export global styles from design system */
+@import './styles/globals.css';
 
-@layer base {
-  html,
-  body,
-  #root {
-    height: 100%;
-  }
-}

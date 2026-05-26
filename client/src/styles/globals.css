@@ -1,0 +1,243 @@
+/* ─── Global Styles ─────────────────────────────────────────────────────────── */
+/* Guinée Investigation Platform — Design System */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ──────────────────────────────────────────────────────────────────── */
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #F8FAFC;
+    color: #1E293B;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #F1F5F9;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+  }
+}
+
+/* ─── Components ────────────────────────────────────────────────────────────── */
+@layer components {
+  /* Card */
+  .card {
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200 hover:shadow-md hover:border-slate-300;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-guinea-red text-white hover:bg-guinea-red-dark focus:ring-guinea-red px-4 py-2.5 text-sm;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-slate-400 px-4 py-2.5 text-sm;
+  }
+
+  .btn-ghost {
+    @apply btn text-slate-600 hover:bg-slate-100 hover:text-slate-900 px-3 py-2 text-sm;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 px-4 py-2.5 text-sm;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  /* Form inputs */
+  .input {
+    @apply w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white text-slate-900 placeholder-slate-400
+           focus:outline-none focus:ring-2 focus:ring-guinea-red/30 focus:border-guinea-red
+           transition-colors duration-150;
+  }
+
+  .input-error {
+    @apply border-red-400 focus:ring-red-300 focus:border-red-500;
+  }
+
+  /* Labels */
+  .label {
+    @apply block text-sm font-medium text-slate-700 mb-1.5;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  /* Sidebar nav item */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer;
+  }
+
+  .nav-item-active {
+    @apply nav-item bg-guinea-red text-white shadow-sm;
+  }
+
+  .nav-item-inactive {
+    @apply nav-item text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+  }
+
+  /* Page header */
+  .page-header {
+    @apply mb-8;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-slate-900 tracking-tight;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-slate-500 mt-1;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply card p-6;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-slate-200;
+  }
+
+  /* Guinea flag stripe accent */
+  .guinea-stripe {
+    background: linear-gradient(90deg, #CE1126 33.33%, #FCD116 33.33% 66.66%, #007A5E 66.66%);
+  }
+}
+
+/* ─── Utilities ─────────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.25s ease-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.25s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Truncate multi-line */
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Glass effect */
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.85);
+  }
+
+  /* Gradient text */
+  .text-gradient-guinea {
+    background: linear-gradient(135deg, #CE1126, #FCD116);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* ─── Keyframes ─────────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ─── ReactFlow overrides ───────────────────────────────────────────────────── */
+.react-flow__attribution {
+  display: none !important;
+}
+
+.react-flow__controls {
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+}
+
+.react-flow__controls-button {
+  border: none !important;
+  background: white !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #F1F5F9 !important;
+}
+
+.react-flow__minimap {
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+}
