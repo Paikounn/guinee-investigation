@@ -11,6 +11,33 @@ export interface User {
   role: UserRole
   grade?: string
   matricule?: string
+  active?: boolean
+  lastLogin?: string
+  createdAt?: string
+  updatedAt?: string
+  _count?: { cases: number; createdCases: number }
+}
+
+export interface AdminStats {
+  totalUsers: number
+  totalCases: number
+  usersByRole: { ADMIN: number; INVESTIGATOR: number; ANALYST: number }
+  usersByCorps: { POLICE: number; GENDARMERIE: number; DOUANE: number }
+  casesByStatus: { OPEN: number; ACTIVE: number; CLOSED: number; ARCHIVED: number }
+  activeUsers24h: number
+  systemStatus: string
+}
+
+export interface ActivityItem {
+  type: 'login' | 'case_created'
+  userId: string
+  userName: string
+  corps: Corps
+  role?: UserRole
+  timestamp: string
+  detail: string
+  caseId?: string
+  caseReference?: string
 }
 
 export interface Case {

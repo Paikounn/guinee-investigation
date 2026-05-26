@@ -35,16 +35,18 @@ enum NodeType {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String    @id @default(cuid())
+  email     String    @unique
   name      String
   password  String
   corps     Corps
-  role      Role     @default(INVESTIGATOR)
+  role      Role      @default(INVESTIGATOR)
   grade     String?
   matricule String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  active    Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   cases        CaseMember[]
   createdCases Case[]
