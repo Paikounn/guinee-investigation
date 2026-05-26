@@ -1,5 +1,12 @@
 export type Corps = 'POLICE' | 'GENDARMERIE' | 'DOUANE' | 'SECURITE_ETAT' | 'GARDE_REPUBLICAINE' | 'EAUX_FORETS'
-export type UserRole = 'ADMIN' | 'INVESTIGATOR' | 'ANALYST'
+export type UserRole =
+  | 'ADMIN'            // Administrateur système — accès total
+  | 'DIRECTEUR'        // Directeur général — accès total corps
+  | 'COMMANDANT'       // Officier supérieur — peut modifier toutes les enquêtes de son corps
+  | 'OFFICIER'         // Officier enquêteur — peut créer, lecture seule sur les fiches soumises
+  | 'ANALYSTE'         // Analyste — lecture seule uniquement
+  | 'INVESTIGATOR'     // Alias legacy
+  | 'ANALYST'          // Alias legacy
 export type CaseStatus = 'OPEN' | 'ACTIVE' | 'CLOSED' | 'ARCHIVED'
 export type NodeType = 'PERSON' | 'VEHICLE' | 'ORGANIZATION' | 'LOCATION' | 'PHONE' | 'EVENT' | 'DOCUMENT' | 'BANK'
 

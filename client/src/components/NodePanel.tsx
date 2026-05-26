@@ -10,6 +10,8 @@ import {
   ESPECES_CITES, AIRES_PROTEGEES, POSTES_FRONTALIERS
 } from '../data/corps-data';
 import { CORPS_META, CorpsId, CorpsBadge } from './CorpsLogos';
+import { useAuthStore } from '../stores/authStore';
+import { ROLE_META } from '../utils/permissions';
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 interface NodePanelProps {
@@ -24,10 +26,10 @@ const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{children}</label>
 );
 
-const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { accent?: string }> = ({ accent, ...props }) => (
+const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { accent?: string; readOnly?: boolean }> = ({ accent, ...props }) => (
   <input
     {...props}
-    className={`w-full bg-slate-900 border rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 transition-colors ${props.className || ''}`}
+    className={`w-full bg-slate-900 border rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 transition-colors ${props.readOnly ? 'opacity-60 cursor-not-allowed' : ''} ${props.className || ''}`}
     style={{ borderColor: accent ? accent + '44' : '#334155', ...props.style }}
   />
 );
@@ -35,7 +37,7 @@ const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { accent?: s
 const Select: React.FC<React.SelectHTMLAttributes<HTMLSelectElement> & { accent?: string }> = ({ accent, children, ...props }) => (
   <select
     {...props}
-    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-slate-500"
+    className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-slate-500 ${props.disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
     style={{ borderColor: accent ? accent + '44' : '#334155' }}
   >
     {children}
@@ -45,7 +47,7 @@ const Select: React.FC<React.SelectHTMLAttributes<HTMLSelectElement> & { accent?
 const TextArea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> & { accent?: string }> = ({ accent, ...props }) => (
   <textarea
     {...props}
-    className="w-full bg-slate-900 border rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 transition-colors resize-none"
+    className={`w-full bg-slate-900 border rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 transition-colors resize-none ${props.readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
     style={{ borderColor: accent ? accent + '44' : '#334155' }}
   />
 );
@@ -101,6 +103,9 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
   const [showCorpsPanel, setShowCorpsPanel] = useState(true);
 
   useEffect(() => { setData(node?.data || {}); }, [node]);
+
+  const { canEditData, user } = useAuthStore();
+  const readOnly = !canEditData();
 
   if (!node) return null;
 
@@ -740,12 +745,22 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
 
       {/* Footer */}
       <div className="p-4 border-t border-slate-800 bg-slate-900/50">
-        <button onClick={handleSave}
-          className="w-full py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 hover:opacity-90 active:scale-95"
-          style={{ background: `linear-gradient(135deg, ${accent}, ${corps.accentColor})`, color: '#fff' }}>
-          <Save size={16}/>
-          Enregistrer les données
-        </button>
+        {readOnly ? (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-center">
+            <div className="text-amber-400 font-bold text-xs uppercase tracking-wider mb-1">🔒 Accès Lecture Seule</div>
+            <div className="text-amber-300/70 text-xs">
+              Votre rôle <span className="font-bold" style={{ color: user?.role ? ROLE_META[user.role]?.color : '#fbbf24' }}>{user?.role ? ROLE_META[user.role]?.labelFr : 'inconnu'}</span> ne permet pas de modifier ces données.
+            </div>
+            <div className="text-slate-600 text-[10px] mt-1">Contactez un commandant ou l'administrateur.</div>
+          </div>
+        ) : (
+          <button onClick={handleSave}
+            className="w-full py-2.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 hover:opacity-90 active:scale-95"
+            style={{ background: `linear-gradient(135deg, ${accent}, ${corps.accentColor})`, color: '#fff' }}>
+            <Save size={16}/>
+            Enregistrer les données
+          </button>
+        )}
         <div className="text-center text-xs text-slate-600 mt-2">
           Système d'Enquête Guinée v2.0 — {corps.shortLabel}
         </div>

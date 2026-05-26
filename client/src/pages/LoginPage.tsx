@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, User, AlertCircle, Shield, ArrowRight } from 'lucide-react';
 import { CORPS_LOGOS, CORPS_META, CorpsId } from '../components/CorpsLogos';
+import { ROLE_META, getRoleBadgeStyle } from '../utils/permissions';
+import type { UserRole } from '../types';
 import { useAuthStore } from '../stores/authStore';
 
 const CORPS_ORDER: CorpsId[] = ['POLICE','GENDARMERIE','DOUANE','SECURITE_ETAT','GARDE_REPUBLICAINE','EAUX_FORETS'];
@@ -13,6 +15,7 @@ const LoginPage: React.FC = () => {
 
   const [step, setStep] = useState<'corps'|'login'>('corps');
   const [selectedCorps, setSelectedCorps] = useState<CorpsId|null>(null);
+  const [selectedRole, setSelectedRole] = useState<UserRole>('OFFICIER');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -45,7 +48,7 @@ const LoginPage: React.FC = () => {
         return;
       }
       // Simulate auth call — replace with real API in production
-      const mockUser = { id: '1', name: username, email: username+'@guinee.gov.gn', corps: selectedCorps || 'POLICE', role: 'AGENT' };
+      const mockUser = { id: '1', name: username, email: username+'@guinee.gov.gn', corps: selectedCorps || 'POLICE', role: selectedRole as UserRole, matricule: 'GN-' + Math.floor(Math.random()*9000+1000) };
       setAuth(mockUser as any, 'mock-token-' + Date.now());
       navigate('/cases');
     } catch (err: any) {
@@ -199,6 +202,35 @@ const LoginPage: React.FC = () => {
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
                       {showPass ? <EyeOff size={16}/> : <Eye size={16}/>}
                     </button>
+                  </div>
+                </div>
+
+                {/* Role selector */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Niveau d'accès / Rôle
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['ADMIN','COMMANDANT','OFFICIER','ANALYSTE'] as UserRole[]).map(role => {
+                      const rm = ROLE_META[role];
+                      return (
+                        <button key={role} type="button" onClick={() => setSelectedRole(role)}
+                          className="flex items-center gap-2 p-2.5 rounded-xl border text-xs font-medium transition-all text-left"
+                          style={{
+                            background: selectedRole === role ? rm.badgeBg : 'transparent',
+                            borderColor: selectedRole === role ? rm.color : '#334155',
+                            color: selectedRole === role ? rm.color : '#64748b',
+                          }}>
+                          <span className="text-base">
+                            {role === 'ADMIN' ? '🛡️' : role === 'COMMANDANT' ? '⭐' : role === 'OFFICIER' ? '🔵' : '📊'}
+                          </span>
+                          <div>
+                            <div className="font-bold">{rm.label}</div>
+                            <div className="text-[9px] opacity-70 leading-tight hidden sm:block">{rm.description.split(' — ')[0]}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
