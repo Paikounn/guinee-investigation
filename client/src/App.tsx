@@ -8,6 +8,7 @@ import AboutPage from './pages/AboutPage'
 import ProductPage from './pages/ProductPage'
 import ContactPage from './pages/ContactPage'
 import FAQPage from './pages/FAQPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
 
 export default function App() {
   const token = useAuthStore((s) => s.token)
@@ -22,6 +23,7 @@ export default function App() {
 
       {/* Auth */}
       <Route path="/login" element={!token ? <LoginPage /> : <Navigate to="/cases" replace />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Protected app */}
       <Route path="/cases" element={token ? <CasesPage /> : <Navigate to="/login" replace />} />

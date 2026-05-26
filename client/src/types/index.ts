@@ -1,4 +1,4 @@
-export type Corps = 'POLICE' | 'GENDARMERIE' | 'DOUANE'
+export type Corps = 'POLICE' | 'GENDARMERIE' | 'DOUANE' | 'SECURITE_ETAT' | 'GARDE_REPUBLICAINE' | 'EAUX_FORETS'
 export type UserRole = 'ADMIN' | 'INVESTIGATOR' | 'ANALYST'
 export type CaseStatus = 'OPEN' | 'ACTIVE' | 'CLOSED' | 'ARCHIVED'
 export type NodeType = 'PERSON' | 'VEHICLE' | 'ORGANIZATION' | 'LOCATION' | 'PHONE' | 'EVENT' | 'DOCUMENT' | 'BANK'

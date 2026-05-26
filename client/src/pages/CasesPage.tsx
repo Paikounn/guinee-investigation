@@ -1,318 +1,443 @@
-import { useState } from 'react'
-import { useNavigate, Link } { Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  Plus, Search, LogOut, Shield, Users, Network,
-  ChevronRight, FolderOpen, X, AlertCircle, Clock,
-} from 'lucide-react'
-import { useAuthStore } from '../stores/authStore'
-import { api } from '../lib/api'
-import { Case, CaseStatus, CORPS_CONFIG, STATUS_CONFIG } from '../types'
+// CasesPage.tsx — Corps-branded investigation dashboard with department filters
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Search, Filter, BarChart2, Shield, AlertTriangle, Clock, CheckCircle, XCircle, ChevronDown, LogOut, Bell, Users, TrendingUp } from 'lucide-react';
+import NavBar from '../components/NavBar';
+import { CORPS_LOGOS, CORPS_META, CorpsCard, CorpsId } from '../components/CorpsLogos';
+import { DEPARTMENTS, CASE_TYPES } from '../data/corps-data';
+import { useAuthStore } from '../stores/authStore';
 
-export default function CasesPage() {
-  const navigate = useNavigate()
-  const qc = useQueryClient()
-  const { user, clearAuth } = useAuthStore()
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface Case {
+  id: string;
+  title: string;
+  caseNumber: string;
+  status: 'OUVERT' | 'EN_COURS' | 'FERME' | 'CLASSE' | 'TRANSMIS';
+  priority: 'URGENCE' | 'HAUTE' | 'NORMALE' | 'BASSE';
+  corps: CorpsId;
+  department: string;
+  caseType: string;
+  region: string;
+  createdAt: string;
+  updatedAt: string;
+  suspects: number;
+  entities: number;
+}
 
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<CaseStatus | ''>('')
-  const [showModal, setShowModal] = useState(false)
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  OUVERT:    { label: 'Ouvert',    color: '#3b82f6', icon: <Clock size={12}/> },
+  EN_COURS:  { label: 'En cours',  color: '#f59e0b', icon: <AlertTriangle size={12}/> },
+  FERME:     { label: 'Fermé',     color: '#6b7280', icon: <XCircle size={12}/> },
+  CLASSE:    { label: 'Classé',    color: '#10b981', icon: <CheckCircle size={12}/> },
+  TRANSMIS:  { label: 'Transmis',  color: '#8b5cf6', icon: <Shield size={12}/> },
+};
 
-  const { data: cases = [], isLoading } = useQuery({
-    queryKey: ['cases'],
-    queryFn: () => api.get<Case[]>('/cases'),
-  })
+const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
+  URGENCE: { label: '🔴 URGENCE', color: '#ef4444' },
+  HAUTE:   { label: '🟠 Haute',   color: '#f97316' },
+  NORMALE: { label: '🟡 Normale', color: '#eab308' },
+  BASSE:   { label: '🟢 Basse',   color: '#22c55e' },
+};
 
-  const createMutation = useMutation({
-    mutationFn: (data: { title: string; description: string; reference: string }) =>
-      api.post<Case>('/cases', data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['cases'] })
-      setShowModal(false)
-    },
-  })
+// ─── Sample data ──────────────────────────────────────────────────────────────
+const SAMPLE_CASES: Case[] = [
+  { id:'1', title:'Trafic de faux billets à Conakry', caseNumber:'PO-2025-0142', status:'EN_COURS', priority:'URGENCE', corps:'POLICE', department:'DCPJ', caseType:'Faux monnayage', region:'Conakry', createdAt:'2025-03-12', updatedAt:'2025-05-20', suspects:4, entities:12 },
+  { id:'2', title:'Braconnage éléphants — Forêt de Ziama', caseNumber:'EF-2025-0031', status:'OUVERT', priority:'HAUTE', corps:'EAUX_FORETS', department:'BFN', caseType:'Braconnage faune protégée', region:'Macenta', createdAt:'2025-04-01', updatedAt:'2025-05-18', suspects:2, entities:7 },
+  { id:'3', title:'Fraude douanière — Gaoual', caseNumber:'DOU-2025-0087', status:'TRANSMIS', priority:'NORMALE', corps:'DOUANE', department:'BMD', caseType:'Contrebande', region:'Gaoual', createdAt:'2025-02-28', updatedAt:'2025-05-10', suspects:3, entities:9 },
+  { id:'4', title:'Menace contre installation stratégique', caseNumber:'DGSE-2025-0012', status:'EN_COURS', priority:'URGENCE', corps:'SECURITE_ETAT', department:'SPHP', caseType:'Menace terroriste', region:'Conakry', createdAt:'2025-05-01', updatedAt:'2025-05-25', suspects:1, entities:15 },
+  { id:'5', title:'Escorte mission diplomatique', caseNumber:'GR-2025-0055', status:'FERME', priority:'HAUTE', corps:'GARDE_REPUBLICAINE', department:'EP', caseType:'Escorte VIP', region:'Conakry', createdAt:'2025-04-15', updatedAt:'2025-04-20', suspects:0, entities:4 },
+  { id:'6', title:'Bande armée — N\'Zérékoré', caseNumber:'GN-2025-0199', status:'OUVERT', priority:'HAUTE', corps:'GENDARMERIE', department:'SR', caseType:'Banditisme / Grand banditisme', region:'N\'Zérékoré', createdAt:'2025-05-10', updatedAt:'2025-05-24', suspects:6, entities:20 },
+];
 
-  const filtered = cases.filter((c) => {
-    const q = search.toLowerCase()
-    const matchSearch = !q || c.title.toLowerCase().includes(q) || c.reference.toLowerCase().includes(q)
-    return matchSearch && (!statusFilter || c.status === statusFilter)
-  })
+// ─── Stat Card ───────────────────────────────────────────────────────────────
+const StatCard: React.FC<{ label: string; value: number | string; icon: React.ReactNode; color: string; sub?: string }> = ({ label, value, icon, color, sub }) => (
+  <div className="rounded-xl p-4 border border-slate-800 bg-slate-900/50 flex items-center gap-4">
+    <div className="rounded-lg p-3 flex-shrink-0" style={{ background: color + '22' }}>
+      <span style={{ color }}>{icon}</span>
+    </div>
+    <div>
+      <div className="text-2xl font-bold text-white">{value}</div>
+      <div className="text-xs text-slate-400">{label}</div>
+      {sub && <div className="text-xs mt-0.5" style={{ color }}>{sub}</div>}
+    </div>
+  </div>
+);
 
-  const corpsConfig = user ? CORPS_CONFIG[user.corps] : null
+// ─── Case Row ────────────────────────────────────────────────────────────────
+const CaseRow: React.FC<{ cas: Case; onClick: () => void }> = ({ cas, onClick }) => {
+  const Logo = CORPS_LOGOS[cas.corps];
+  const meta = CORPS_META[cas.corps];
+  const status = STATUS_CONFIG[cas.status];
+  const priority = PRIORITY_CONFIG[cas.priority];
+  return (
+    <tr className="border-b border-slate-800 hover:bg-slate-800/40 cursor-pointer transition-colors" onClick={onClick}>
+      <td className="px-4 py-3">
+        <Logo size={32}/>
+      </td>
+      <td className="px-4 py-3">
+        <div className="font-medium text-white text-sm">{cas.title}</div>
+        <div className="text-xs text-slate-500 mt-0.5">{cas.caseNumber}</div>
+      </td>
+      <td className="px-4 py-3">
+        <span className="text-xs px-2 py-1 rounded-full font-medium" style={{ background: status.color+'22', color: status.color }}>
+          {status.label}
+        </span>
+      </td>
+      <td className="px-4 py-3">
+        <span className="text-xs font-medium" style={{ color: priority.color }}>{priority.label}</span>
+      </td>
+      <td className="px-4 py-3">
+        <span className="text-xs text-slate-300" style={{ color: meta.secondaryColor }}>{meta.shortLabel}</span>
+        <div className="text-xs text-slate-500">{cas.department}</div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="text-xs text-slate-400">{cas.caseType}</div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="text-xs text-slate-400">{cas.region}</div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="text-xs text-slate-400">{cas.suspects} suspects</div>
+        <div className="text-xs text-slate-500">{cas.entities} entités</div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="text-xs text-slate-500">{cas.updatedAt}</div>
+      </td>
+    </tr>
+  );
+};
 
-  // Stats
-  const open = cases.filter((c) => c.status === 'OPEN').length
-  const active = cases.filter((c) => c.status === 'ACTIVE').length
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
+const CasesPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, clearAuth } = useAuthStore();
+  const logout = clearAuth;
+  const [cases, setCases] = useState<Case[]>(SAMPLE_CASES);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCorps, setSelectedCorps] = useState<CorpsId | 'ALL'>('ALL');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [selectedDept, setSelectedDept] = useState('ALL');
+  const [selectedCaseType, setSelectedCaseType] = useState('ALL');
+  const [showNewCase, setShowNewCase] = useState(false);
+
+  // New case form state
+  const [newTitle, setNewTitle] = useState('');
+  const [newCorps, setNewCorps] = useState<CorpsId>('POLICE');
+  const [newPriority, setNewPriority] = useState<'URGENCE'|'HAUTE'|'NORMALE'|'BASSE'>('NORMALE');
+
+  const activeMeta = selectedCorps !== 'ALL' ? CORPS_META[selectedCorps] : null;
+  const depts = selectedCorps !== 'ALL' ? (DEPARTMENTS[selectedCorps as CorpsId] || []) : [];
+  const caseTypes = selectedCorps !== 'ALL' ? (CASE_TYPES[selectedCorps as CorpsId] || []) : [];
+
+  const filtered = cases.filter(c => {
+    const matchSearch = !searchTerm || c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.caseNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchCorps = selectedCorps === 'ALL' || c.corps === selectedCorps;
+    const matchStatus = selectedStatus === 'ALL' || c.status === selectedStatus;
+    const matchDept = selectedDept === 'ALL' || c.department === selectedDept;
+    const matchType = selectedCaseType === 'ALL' || c.caseType === selectedCaseType;
+    return matchSearch && matchCorps && matchStatus && matchDept && matchType;
+  });
+
+  const totalOpen = cases.filter(c=>c.status==='OUVERT'||c.status==='EN_COURS').length;
+  const totalUrgence = cases.filter(c=>c.priority==='URGENCE').length;
+  const totalSuspects = cases.reduce((s,c)=>s+c.suspects,0);
+
+  const createCase = () => {
+    if (!newTitle.trim()) return;
+    const id = Date.now().toString();
+    const num = `${newCorps.slice(0,2)}-2025-${String(cases.length+1).padStart(4,'0')}`;
+    setCases(prev=>[...prev, {
+      id, title: newTitle, caseNumber: num, status:'OUVERT', priority:newPriority,
+      corps:newCorps, department:'', caseType:'', region:'Conakry',
+      createdAt:new Date().toISOString().split('T')[0], updatedAt:new Date().toISOString().split('T')[0],
+      suspects:0, entities:0
+    }]);
+    setShowNewCase(false);
+    setNewTitle('');
+  };
 
   return (
-    <div className="min-h-screen bg-[#080c14] flex flex-col">
-      {/* Header */}
-      <header className="bg-[#0b1020] border-b border-slate-800/60 px-6 py-3.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-cyan-400" />
+    <div className="min-h-screen bg-[#060b14] text-white">
+      {/* Top bar */}
+      <div className="border-b border-slate-800 px-6 py-3 flex items-center justify-between bg-[#080c14]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+            style={{ background: 'linear-gradient(135deg,#CE1126,#009460)' }}>
+            {user?.name?.[0]?.toUpperCase() || 'U'}
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-white">{user?.name || 'Agent'}</div>
+            <div className="text-xs text-slate-500">{user?.corps || 'Système d\'enquête'}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="p-2 rounded-lg hover:bg-slate-800 text-slate-400"><Bell size={16}/></button>
+          <button onClick={()=>{logout();navigate('/login');}} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-red-400 hover:bg-red-500/10 transition-colors">
+            <LogOut size={14}/>Déconnexion
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-[1400px] mx-auto px-6 py-8">
+        {/* Page header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Tableau de Bord des Enquêtes</h1>
+            <p className="text-slate-400 text-sm mt-1">Système National d'Investigation — République de Guinée</p>
+          </div>
+          <button onClick={()=>setShowNewCase(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all hover:opacity-90 active:scale-95"
+            style={{ background: 'linear-gradient(135deg,#CE1126,#009460)', color:'#fff' }}>
+            <Plus size={16}/> Nouvelle enquête
+          </button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Affaires totales" value={cases.length} icon={<BarChart2 size={20}/>} color="#3b82f6"/>
+          <StatCard label="En cours / Ouvertes" value={totalOpen} icon={<Clock size={20}/>} color="#f59e0b" sub={`${Math.round(totalOpen/cases.length*100)}% du total`}/>
+          <StatCard label="Urgences actives" value={totalUrgence} icon={<AlertTriangle size={20}/>} color="#ef4444"/>
+          <StatCard label="Suspects identifiés" value={totalSuspects} icon={<Users size={20}/>} color="#10b981"/>
+        </div>
+
+        {/* Corps selector mosaic */}
+        <div className="mb-6">
+          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Filtrer par corps</div>
+          <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
+            <button onClick={()=>setSelectedCorps('ALL')}
+              className="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-xs font-semibold"
+              style={{
+                background: selectedCorps==='ALL' ? 'rgba(100,116,139,0.2)' : 'rgba(255,255,255,0.02)',
+                borderColor: selectedCorps==='ALL' ? '#64748b' : 'rgba(255,255,255,0.08)',
+              }}>
+              <Shield size={22} className="text-slate-400"/>
+              <span className="text-slate-400">Tous</span>
+              <span className="text-slate-600 text-[10px]">{cases.length}</span>
+            </button>
+            {(Object.keys(CORPS_LOGOS) as CorpsId[]).map(corpsId => {
+              const Logo = CORPS_LOGOS[corpsId];
+              const meta = CORPS_META[corpsId];
+              const count = cases.filter(c=>c.corps===corpsId).length;
+              const sel = selectedCorps===corpsId;
+              return (
+                <button key={corpsId} onClick={()=>setSelectedCorps(corpsId)}
+                  className="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-xs font-semibold"
+                  style={{
+                    background: sel ? meta.badgeBg : 'rgba(255,255,255,0.02)',
+                    borderColor: sel ? meta.primaryColor : 'rgba(255,255,255,0.08)',
+                    boxShadow: sel ? '0 0 16px '+meta.primaryColor+'44' : 'none',
+                  }}>
+                  <Logo size={28}/>
+                  <span style={{ color: meta.secondaryColor }}>{meta.shortLabel}</span>
+                  <span className="text-slate-500 text-[10px]">{count} affaires</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Filters row */}
+        <div className="flex flex-wrap items-center gap-3 mb-6 p-4 rounded-xl border border-slate-800 bg-slate-900/30">
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <Search size={14} className="text-slate-500"/>
+            <input value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}
+              placeholder="Rechercher une affaire..."
+              className="flex-1 bg-transparent text-sm text-white placeholder-slate-600 focus:outline-none"/>
+          </div>
+          <select value={selectedStatus} onChange={e=>setSelectedStatus(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-xs text-slate-300 rounded-lg px-3 py-2 focus:outline-none">
+            <option value="ALL">Tous statuts</option>
+            {Object.entries(STATUS_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+          </select>
+          {selectedCorps !== 'ALL' && depts.length > 0 && (
+            <select value={selectedDept} onChange={e=>setSelectedDept(e.target.value)}
+              className="bg-slate-800 border border-slate-700 text-xs text-slate-300 rounded-lg px-3 py-2 focus:outline-none">
+              <option value="ALL">Tous départements</option>
+              {depts.map((d:any)=><option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          )}
+          {selectedCorps !== 'ALL' && caseTypes.length > 0 && (
+            <select value={selectedCaseType} onChange={e=>setSelectedCaseType(e.target.value)}
+              className="bg-slate-800 border border-slate-700 text-xs text-slate-300 rounded-lg px-3 py-2 focus:outline-none">
+              <option value="ALL">Tous types</option>
+              {caseTypes.map((c:string)=><option key={c}>{c}</option>)}
+            </select>
+          )}
+          <div className="text-xs text-slate-500">{filtered.length} affaire(s) trouvée(s)</div>
+        </div>
+
+        {/* Cases table */}
+        <div className="rounded-xl border border-slate-800 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-900/60">
+                  <th className="px-4 py-3 text-left text-xs text-slate-500 font-semibold uppercase tracking-wider">Corps</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-500 font-semibold uppercase tracking-wider">Affaire</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-500 font-semibold uppercase tracking-wider">Statut</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-500 font-semibold uppercase tracking-wider">Priorité</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-500 font-semibold uppercase tracking-wider">Unité</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-500 font-semibold uppercase tracking-wider">Type</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-500 font-semibold uppercase tracking-wider">Région</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-500 font-semibold uppercase tracking-wider">Entités</th>
+                  <th className="px-4 py-3 text-left text-xs text-slate-500 font-semibold uppercase tracking-wider">Màj</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={9} className="px-4 py-16 text-center text-slate-500">Aucune affaire trouvée</td></tr>
+                ) : (
+                  filtered.map(cas => (
+                    <CaseRow key={cas.id} cas={cas} onClick={()=>navigate('/cases/'+cas.id)}/>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Regional stats */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/30 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp size={16} className="text-blue-400"/>
+              <span className="text-sm font-bold text-white">Répartition par corps</span>
             </div>
-            <div>
-              <p className="font-bold text-white leading-tight tracking-tight text-sm">
-                Guinée Investigation
-              </p>
-              <p className="text-xs text-slate-500">République de Guinée — Sécurité Nationale</p>
-            </div>
+            {(Object.keys(CORPS_LOGOS) as CorpsId[]).map(corpsId => {
+              const Logo = CORPS_LOGOS[corpsId];
+              const meta = CORPS_META[corpsId];
+              const count = cases.filter(c=>c.corps===corpsId).length;
+              const pct = cases.length ? Math.round(count/cases.length*100) : 0;
+              return (
+                <div key={corpsId} className="flex items-center gap-3 mb-3">
+                  <Logo size={20}/>
+                  <div className="flex-1">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span style={{ color: meta.secondaryColor }}>{meta.shortLabel}</span>
+                      <span className="text-slate-500">{count}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-slate-800">
+                      <div className="h-1.5 rounded-full" style={{ width: pct+'%', background: meta.primaryColor }}/>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          <nav className="hidden md:flex items-center gap-1">
-            <span className="text-xs font-semibold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-3 py-1.5 rounded-lg">
-              Affaires
-            </span>
-          </nav>
-
-          <div className="flex items-center gap-5">
-            {user && (
-              <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                  <p className="text-sm font-semibold text-white leading-tight">{user.name}</p>
-                  <p className="text-xs text-slate-500">
-                    {user.grade ? `${user.grade} · ` : ''}{corpsConfig?.label}
-                  </p>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/30 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle size={16} className="text-yellow-400"/>
+              <span className="text-sm font-bold text-white">Statuts des affaires</span>
+            </div>
+            {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+              const count = cases.filter(c=>c.status===key).length;
+              const pct = cases.length ? Math.round(count/cases.length*100) : 0;
+              return (
+                <div key={key} className="flex items-center gap-3 mb-3">
+                  <span style={{ color: cfg.color }}>{cfg.icon}</span>
+                  <div className="flex-1">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-slate-300">{cfg.label}</span>
+                      <span className="text-slate-500">{count}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-slate-800">
+                      <div className="h-1.5 rounded-full" style={{ width: pct+'%', background: cfg.color }}/>
+                    </div>
+                  </div>
                 </div>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs border ${corpsConfig?.border ?? 'border-slate-600'} bg-slate-800`}>
-                  {user.name.charAt(0).toUpperCase()}
+              );
+            })}
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-900/30 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Users size={16} className="text-green-400"/>
+              <span className="text-sm font-bold text-white">Affaires urgentes</span>
+            </div>
+            {cases.filter(c=>c.priority==='URGENCE'||c.priority==='HAUTE').slice(0,5).map(cas => {
+              const Logo = CORPS_LOGOS[cas.corps];
+              const priority = PRIORITY_CONFIG[cas.priority];
+              return (
+                <div key={cas.id} className="flex items-center gap-3 mb-3 cursor-pointer hover:bg-slate-800/50 rounded-lg p-2 -mx-2 transition-colors"
+                  onClick={()=>navigate('/cases/'+cas.id)}>
+                  <Logo size={24}/>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-white font-medium truncate">{cas.title}</div>
+                    <div className="text-xs" style={{ color: priority.color }}>{priority.label}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* New Case Modal */}
+      {showNewCase && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0b1020] border border-slate-700 rounded-2xl w-full max-w-md p-6">
+            <h3 className="text-lg font-bold text-white mb-6">Nouvelle affaire</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Titre de l'affaire</label>
+                <input value={newTitle} onChange={e=>setNewTitle(e.target.value)}
+                  placeholder="Description concise..."
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-slate-500"/>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Corps compétent</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(Object.keys(CORPS_LOGOS) as CorpsId[]).map(c=>{
+                    const Logo=CORPS_LOGOS[c];
+                    const meta=CORPS_META[c];
+                    return (
+                      <button key={c} onClick={()=>setNewCorps(c)}
+                        className="flex flex-col items-center gap-1 p-2 rounded-xl border transition-all"
+                        style={{
+                          background: newCorps===c ? meta.badgeBg : 'transparent',
+                          borderColor: newCorps===c ? meta.primaryColor : '#334155',
+                        }}>
+                        <Logo size={28}/>
+                        <span className="text-[10px]" style={{ color: meta.secondaryColor }}>{meta.shortLabel}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            )}
-            <a
-              href="/faq"
-              className="flex items-center gap-1.5 text-slate-500 hover:text-yellow-400 text-sm transition-colors mr-2"
-              title="Guide d'utilisation"
-            >
-              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
-              <span className="hidden sm:inline">Guide</span>
-            </a>
-            <button
-              onClick={() => { clearAuth(); navigate('/login', { replace: true }) }}
-              className="flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Déconnexion</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
-        {/* Top row */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Affaires</h1>
-            <p className="text-slate-500 text-sm mt-1">
-              {cases.length} affaire{cases.length !== 1 ? 's' : ''} dans votre corps
-            </p>
-          </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-slate-900 text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-lg shadow-cyan-500/20"
-          >
-            <Plus className="w-4 h-4" />
-            Nouvelle affaire
-          </button>
-        </div>
-
-        {/* Stats strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-          {[
-            { label: 'Total affaires', value: cases.length, color: 'text-white' },
-            { label: 'Ouvertes', value: open, color: 'text-cyan-400' },
-            { label: 'En cours', value: active, color: 'text-amber-400' },
-            { label: 'Clôturées', value: cases.filter((c) => c.status === 'CLOSED').length, color: 'text-emerald-400' },
-          ].map((s) => (
-            <div key={s.label} className="bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-3">
-              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-              <p className="text-slate-500 text-xs mt-0.5">{s.label}</p>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Priorité</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {(['URGENCE','HAUTE','NORMALE','BASSE'] as const).map(p=>(
+                    <button key={p} onClick={()=>setNewPriority(p)}
+                      className="text-xs py-1.5 rounded-lg border font-semibold transition-all"
+                      style={{
+                        background: newPriority===p ? PRIORITY_CONFIG[p].color+'22' : 'transparent',
+                        borderColor: newPriority===p ? PRIORITY_CONFIG[p].color : '#334155',
+                        color: PRIORITY_CONFIG[p].color,
+                      }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-3 mb-6">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input
-              className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 transition-colors"
-              placeholder="Rechercher par titre ou référence…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <select
-            className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-colors"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as CaseStatus | '')}
-          >
-            <option value="">Tous les statuts</option>
-            {(Object.keys(STATUS_CONFIG) as CaseStatus[]).map((s) => (
-              <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Grid */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-24">
-            <div className="w-6 h-6 border-2 border-slate-700 border-t-cyan-400 rounded-full animate-spin" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-24">
-            <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-4">
-              <FolderOpen className="w-7 h-7 text-slate-600" />
+            <div className="flex gap-3 mt-6">
+              <button onClick={()=>setShowNewCase(false)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-400 text-sm hover:bg-slate-800 transition-colors">
+                Annuler
+              </button>
+              <button onClick={createCase}
+                className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg,#CE1126,#009460)' }}>
+                Créer l'affaire
+              </button>
             </div>
-            <p className="text-slate-400 font-medium">Aucune affaire trouvée</p>
-            <p className="text-slate-600 text-sm mt-1">
-              {search || statusFilter ? 'Modifiez vos filtres' : 'Créez votre première affaire'}
-            </p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((c) => (
-              <CaseCard key={c.id} case_={c} onClick={() => navigate(`/cases/${c.id}`)} />
-            ))}
-          </div>
-        )}
-      </main>
-
-      {showModal && (
-        <NewCaseModal
-          onClose={() => setShowModal(false)}
-          onSubmit={createMutation.mutate}
-          loading={createMutation.isPending}
-          error={createMutation.error?.message}
-        />
+        </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-function CaseCard({ case_: c, onClick }: { case_: Case; onClick: () => void }) {
-  const cfg = CORPS_CONFIG[c.corps]
-  const sCfg = STATUS_CONFIG[c.status]
-
-  return (
-    <button
-      onClick={onClick}
-      className="group bg-slate-900/60 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-5 text-left transition-all hover:shadow-xl hover:shadow-black/40 w-full"
-    >
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="min-w-0">
-          <p className="text-xs text-slate-600 font-mono tracking-widest uppercase mb-1">{c.reference}</p>
-          <h3 className="font-semibold text-white leading-snug line-clamp-2 group-hover:text-cyan-300 transition-colors">
-            {c.title}
-          </h3>
-        </div>
-        <ChevronRight className="w-4 h-4 text-slate-700 group-hover:text-cyan-400 flex-shrink-0 mt-1 transition-colors" />
-      </div>
-
-      {c.description && (
-        <p className="text-sm text-slate-500 line-clamp-2 mb-3 leading-relaxed">{c.description}</p>
-      )}
-
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full font-medium ${sCfg.color}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${sCfg.dot} flex-shrink-0`} />
-          {sCfg.label}
-        </span>
-        <span className={`text-xs px-2 py-1 rounded-full font-medium ${cfg.bg}`}>
-          {cfg.badge}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-4 mt-4 pt-3 border-t border-slate-800 text-xs text-slate-600">
-        <span className="flex items-center gap-1.5">
-          <Network className="w-3.5 h-3.5" />
-          {c._count?.nodes ?? 0} nœuds
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Users className="w-3.5 h-3.5" />
-          {c._count?.members ?? 0} membre{(c._count?.members ?? 0) !== 1 ? 's' : ''}
-        </span>
-        <span className="ml-auto flex items-center gap-1">
-          <Clock className="w-3 h-3" />
-          {new Date(c.updatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-        </span>
-      </div>
-    </button>
-  )
-}
-
-interface NewCaseModalProps {
-  onClose: () => void
-  onSubmit: (data: { title: string; description: string; reference: string }) => void
-  loading: boolean
-  error?: string
-}
-
-function NewCaseModal({ onClose, onSubmit, loading, error }: NewCaseModalProps) {
-  const [form, setForm] = useState({ title: '', description: '', reference: '' })
-
-  function set(k: keyof typeof form) {
-    return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }))
-  }
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bg-[#0d1223] border border-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-white">Nouvelle affaire</h3>
-          <button onClick={onClose} className="text-slate-600 hover:text-slate-300 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <form onSubmit={(e) => { e.preventDefault(); onSubmit(form) }} className="space-y-4">
-          <ModalField label="Référence *">
-            <input className={minp} required value={form.reference} onChange={set('reference')} placeholder="AFF-2026-001" />
-          </ModalField>
-          <ModalField label="Titre *">
-            <input className={minp} required value={form.title} onChange={set('title')} placeholder="Intitulé de l'affaire" />
-          </ModalField>
-          <ModalField label="Description">
-            <textarea className={minp + ' resize-none'} rows={3} value={form.description} onChange={set('description')} placeholder="Description de l'affaire…" />
-          </ModalField>
-
-          {error && (
-            <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2.5">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-400">{error}</p>
-            </div>
-          )}
-
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600 py-2.5 rounded-lg text-sm font-medium transition-colors">
-              Annuler
-            </button>
-            <button type="submit" disabled={loading} className="flex-1 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-900 py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2">
-              {loading ? (
-                <><span className="w-4 h-4 border-2 border-slate-900/30 border-t-slate-900 rounded-full animate-spin" />Création…</>
-              ) : "Créer l'affaire"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-function ModalField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">{label}</label>
-      {children}
-    </div>
-  )
-}
-
-const minp =
-  'w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 transition-colors'
+export default CasesPage;

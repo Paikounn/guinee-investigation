@@ -15,6 +15,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useCollaboration } from '../hooks/useCollaboration'
 import { nodeTypes, type FlowNodeData } from '../components/CustomNode'
 import NodePanel from '../components/NodePanel'
+import { type CorpsId } from '../components/CorpsLogos'
 import { CaseFull, NodeType, DBNode, DBEdge, CORPS_CONFIG, STATUS_CONFIG, NODE_TYPE_CONFIG, RELATIONSHIP_LABELS } from '../types'
 
 function dbNodeToFlow(n: DBNode): FlowNode<FlowNodeData> {
@@ -493,16 +494,14 @@ export default function CanvasPage() {
           )}
         </div>
 
-        {/* Right panel — node details */}
+        {/* Right panel — node details (fixed position) */}
         {selectedNode && (
-          <div className="w-72 flex-shrink-0 bg-[#0b1020] border-l border-slate-800/60 overflow-hidden flex flex-col print:hidden">
-            <NodePanel
-              node={selectedNode}
-              onClose={() => setSelectedNode(null)}
-              onUpdate={handleNodeUpdate}
-              onDelete={handleNodeDelete}
-            />
-          </div>
+          <NodePanel
+            node={selectedNode}
+            onClose={() => setSelectedNode(null)}
+            onSave={(id, data) => { handleNodeUpdate(id, data.label || selectedNode.data?.label || '', data); }}
+            activeCorps={(user?.corps as CorpsId) || 'POLICE'}
+          />
         )}
       </div>
 
