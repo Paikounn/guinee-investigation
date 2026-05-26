@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, LogOut, Shield, Users, Network, ChevronRight, FolderOpen } from 'lucide-react'
+import { Plus, Search, LogOut, Shield, Users, Network, ChevronRight, FolderOpen, Settings } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { api } from '../lib/api'
 import { Case, CaseStatus, CORPS_CONFIG, STATUS_CONFIG } from '../types'
@@ -54,6 +54,15 @@ export default function CasesPage() {
           </div>
 
           <div className="flex items-center gap-5">
+            {user?.role === 'ADMIN' && (
+              <button
+                onClick={() => navigate('/admin')}
+                className="flex items-center gap-1.5 text-red-600 hover:text-red-700 text-sm font-medium transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                Administration
+              </button>
+            )}
             {user && (
               <div className="flex items-center gap-3">
                 <div className="text-right">

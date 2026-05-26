@@ -46,12 +46,20 @@ router.post('/login', async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: 'Identifiants incorrects' })
     }
+    if (!user.active) {
+      return res.status(403).json({ error: 'Compte désactivé' })
+    }
+    await prisma.user.update({ where: { id: user.id }, data: { lastLogin: new Date() } })
     const token = signToken({ userId: user.id, corps: user.corps, role: user.role })
     const { password: _, ...safeUser } = user
     res.json({ user: safeUser, token })
   } catch (e: any) {
     res.status(400).json({ error: e.message })
   }
+})
+
+router.post('/logout', authenticate, (_req: AuthRequest, res) => {
+  res.json({ success: true })
 })
 
 router.get('/me', authenticate, async (req: AuthRequest, res) => {

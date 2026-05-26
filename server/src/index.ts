@@ -9,6 +9,7 @@ import authRouter from './routes/auth'
 import casesRouter from './routes/cases'
 import nodesRouter from './routes/nodes'
 import edgesRouter from './routes/edges'
+import adminRouter from './routes/admin'
 
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -24,6 +25,7 @@ app.use(cors({ origin: corsOrigin, credentials: true }))
 app.use(express.json())
 
 app.use('/api/auth', authRouter)
+app.use('/api/admin', adminRouter)
 app.use('/api/cases', casesRouter)
 app.use('/api/cases/:caseId/nodes', nodesRouter)
 app.use('/api/cases/:caseId/edges', edgesRouter)
