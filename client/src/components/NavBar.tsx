@@ -6,6 +6,7 @@ const NAV_LINKS = [
   { to: '/product', label: 'Produit' },
   { to: '/about', label: 'À Propos' },
   { to: '/contact', label: 'Contact' },
+  { to: '/faq', label: 'Guide' },
 ]
 
 export default function NavBar() {
