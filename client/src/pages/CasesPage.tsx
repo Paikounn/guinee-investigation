@@ -260,7 +260,7 @@ const CasesPage: React.FC = () => {
             <select value={selectedCaseType} onChange={e=>setSelectedCaseType(e.target.value)}
               className="bg-slate-800 border border-slate-700 text-xs text-slate-300 rounded-lg px-3 py-2 focus:outline-none">
               <option value="ALL">Tous types</option>
-              {caseTypes.map((c:string)=><option key={c}>{c}</option>)}
+              {caseTypes.map((c:any)=><option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           )}
           <div className="text-xs text-slate-500">{filtered.length} affaire(s) trouvée(s)</div>

@@ -68,7 +68,10 @@ export interface BankData {
 export const CORPS_CONFIG: Record<Corps, { label: string; color: string; bg: string; border: string; badge: string; dot: string }> = {
   POLICE:      { label: 'Police Nationale',      color: 'text-blue-300',    bg: 'bg-blue-500/20 border border-blue-500/40 text-blue-300',        border: 'border-blue-500/40',    badge: 'POLICE',      dot: 'bg-blue-400' },
   GENDARMERIE: { label: 'Gendarmerie Nationale', color: 'text-slate-300',   bg: 'bg-slate-500/20 border border-slate-500/40 text-slate-300',      border: 'border-slate-500/40',   badge: 'GENDARMERIE', dot: 'bg-slate-400' },
-  DOUANE:      { label: 'Douane Nationale',      color: 'text-emerald-300', bg: 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300', border: 'border-emerald-500/40', badge: 'DOUANE',      dot: 'bg-emerald-400' },
+  DOUANE:           { label: 'Douane Nationale',       color: 'text-emerald-300', bg: 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300',  border: 'border-emerald-500/40',  badge: 'DOUANE',            dot: 'bg-emerald-400'  },
+  SECURITE_ETAT:    { label: "Sécurité d'État",         color: 'text-red-300',     bg: 'bg-red-500/20 border border-red-500/40 text-red-300',               border: 'border-red-500/40',      badge: 'DGSE',              dot: 'bg-red-400'      },
+  GARDE_REPUBLICAINE:{ label: 'Garde Républicaine',     color: 'text-yellow-300',  bg: 'bg-yellow-500/20 border border-yellow-500/40 text-yellow-300',       border: 'border-yellow-500/40',   badge: 'GARDE_REP',         dot: 'bg-yellow-400'   },
+  EAUX_FORETS:      { label: 'Eaux et Forêts',          color: 'text-green-300',   bg: 'bg-green-500/20 border border-green-500/40 text-green-300',           border: 'border-green-500/40',    badge: 'EAUX_FORETS',       dot: 'bg-green-400'    },
 }
 
 export const STATUS_CONFIG: Record<CaseStatus, { label: string; color: string; dot: string }> = {

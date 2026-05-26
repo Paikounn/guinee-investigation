@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, ChevronDown, ChevronUp, AlertTriangle, Shield, Star, FileText, User, Car, Building, MapPin, Phone, Calendar, CreditCard, Zap } from 'lucide-react';
 import { NodeType, NODE_TYPE_CONFIG, PersonData, VehicleData, OrganizationData, LocationData, PhoneData, EventData, DocumentData, BankData } from '../types';
-import { suggestLocations, suggestCorps, suggestGrades, RELATIONSHIP_LABELS, ALL_GUINEA_LOCATIONS, AI_RELATIONSHIP_LABELS } from '../data/guinea';
+import { suggestLocations, suggestCorps, suggestGrades, ALL_GUINEA_LOCATIONS, AI_RELATIONSHIP_LABELS } from '../data/guinea';
+import { RELATIONSHIP_LABELS } from '../types';
 import {
   GRADES, DEPARTMENTS, CASE_TYPES, PROCEDURES, JURIDICTIONS,
   OPERATEURS_GN, BANQUES_GN, NIVEAUX_CLASSIFICATION, FIABILITE_SOURCE, CREDIBILITE_INFO,
@@ -325,7 +326,7 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
           <div><Label>Type d'affaire</Label>
             <Select value={data.caseType||''} onChange={e=>update('caseType',e.target.value)} accent="#1a2a5e">
               <option value="">-- Type --</option>
-              {caseTypes.map((c:string)=><option key={c}>{c}</option>)}
+              {caseTypes.map((c:any)=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
             </Select>
           </div>
         </div>
@@ -333,13 +334,13 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
           <div><Label>Procédure</Label>
             <Select value={data.procedure||''} onChange={e=>update('procedure',e.target.value)} accent="#1a2a5e">
               <option value="">-- Procédure --</option>
-              {procedures.map((p:string)=><option key={p}>{p}</option>)}
+              {procedures.map((p:any)=><option key={p.id} value={p.id}>{p.label}</option>)}
             </Select>
           </div>
           <div><Label>Grade OPJ</Label>
             <Select value={data.grade||''} onChange={e=>update('grade',e.target.value)} accent="#1a2a5e">
               <option value="">-- Grade --</option>
-              {grades.map((g:any)=><option key={g.id} value={g.id}>{g.label}</option>)}
+              {grades.map((g:string)=><option key={g} value={g}>{g}</option>)}
             </Select>
           </div>
         </div>
@@ -386,7 +387,7 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
           <div><Label>Type d'affaire</Label>
             <Select value={data.caseType||''} onChange={e=>update('caseType',e.target.value)} accent="#009460">
               <option value="">-- Type --</option>
-              {caseTypes.map((c:string)=><option key={c}>{c}</option>)}
+              {caseTypes.map((c:any)=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
             </Select>
           </div>
         </div>
@@ -394,13 +395,13 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
           <div><Label>Procédure</Label>
             <Select value={data.procedure||''} onChange={e=>update('procedure',e.target.value)} accent="#009460">
               <option value="">-- Procédure --</option>
-              {procedures.map((p:string)=><option key={p}>{p}</option>)}
+              {procedures.map((p:any)=><option key={p.id} value={p.id}>{p.label}</option>)}
             </Select>
           </div>
           <div><Label>Grade enquêteur</Label>
             <Select value={data.grade||''} onChange={e=>update('grade',e.target.value)} accent="#009460">
               <option value="">-- Grade --</option>
-              {grades.map((g:any)=><option key={g.id} value={g.id}>{g.label}</option>)}
+              {grades.map((g:string)=><option key={g} value={g}>{g}</option>)}
             </Select>
           </div>
         </div>
@@ -441,7 +442,7 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
           <div><Label>Type d'infraction</Label>
             <Select value={data.caseType||''} onChange={e=>update('caseType',e.target.value)} accent="#ff8c00">
               <option value="">-- Infraction --</option>
-              {caseTypes.map((c:string)=><option key={c}>{c}</option>)}
+              {caseTypes.map((c:any)=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
             </Select>
           </div>
         </div>
@@ -449,20 +450,20 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
           <div><Label>Procédure</Label>
             <Select value={data.procedure||''} onChange={e=>update('procedure',e.target.value)} accent="#ff8c00">
               <option value="">-- Procédure --</option>
-              {procedures.map((p:string)=><option key={p}>{p}</option>)}
+              {procedures.map((p:any)=><option key={p.id} value={p.id}>{p.label}</option>)}
             </Select>
           </div>
           <div><Label>Grade agent</Label>
             <Select value={data.grade||''} onChange={e=>update('grade',e.target.value)} accent="#ff8c00">
               <option value="">-- Grade --</option>
-              {grades.map((g:any)=><option key={g.id} value={g.id}>{g.label}</option>)}
+              {grades.map((g:string)=><option key={g} value={g}>{g}</option>)}
             </Select>
           </div>
         </div>
         <div><Label>Poste frontière</Label>
           <Select value={data.borderPost||''} onChange={e=>update('borderPost',e.target.value)} accent="#ff8c00">
             <option value="">-- Poste --</option>
-            {POSTES_FRONTALIERS.map((p:string)=><option key={p}>{p}</option>)}
+            {POSTES_FRONTALIERS.map((p:any)=><option key={p.nom} value={p.nom}>{p.nom} ({p.pays})</option>)}
           </Select>
         </div>
         <div className="grid grid-cols-3 gap-2">
@@ -517,13 +518,13 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
           <div><Label>Type de renseignement</Label>
             <Select value={data.caseType||''} onChange={e=>update('caseType',e.target.value)} accent="#CE1126">
               <option value="">-- Type --</option>
-              {caseTypes.map((c:string)=><option key={c}>{c}</option>)}
+              {caseTypes.map((c:any)=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
             </Select>
           </div>
           <div><Label>Grade officier traitant</Label>
             <Select value={data.grade||''} onChange={e=>update('grade',e.target.value)} accent="#CE1126">
               <option value="">-- Grade --</option>
-              {grades.map((g:any)=><option key={g.id} value={g.id}>{g.label}</option>)}
+              {grades.map((g:string)=><option key={g} value={g}>{g}</option>)}
             </Select>
           </div>
         </div>
@@ -554,13 +555,13 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
           <div><Label>Type de mission</Label>
             <Select value={data.caseType||''} onChange={e=>update('caseType',e.target.value)} accent="#FCD116">
               <option value="">-- Mission --</option>
-              {caseTypes.map((c:string)=><option key={c}>{c}</option>)}
+              {caseTypes.map((c:any)=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
             </Select>
           </div>
           <div><Label>Grade</Label>
             <Select value={data.grade||''} onChange={e=>update('grade',e.target.value)} accent="#FCD116">
               <option value="">-- Grade --</option>
-              {grades.map((g:any)=><option key={g.id} value={g.id}>{g.label}</option>)}
+              {grades.map((g:string)=><option key={g} value={g}>{g}</option>)}
             </Select>
           </div>
         </div>
@@ -602,13 +603,13 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
           <div><Label>Type d'infraction</Label>
             <Select value={data.caseType||''} onChange={e=>update('caseType',e.target.value)} accent="#009460">
               <option value="">-- Infraction --</option>
-              {caseTypes.map((c:string)=><option key={c}>{c}</option>)}
+              {caseTypes.map((c:any)=><option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
             </Select>
           </div>
           <div><Label>Procédure</Label>
             <Select value={data.procedure||''} onChange={e=>update('procedure',e.target.value)} accent="#009460">
               <option value="">-- Procédure --</option>
-              {procedures.map((p:string)=><option key={p}>{p}</option>)}
+              {procedures.map((p:any)=><option key={p.id} value={p.id}>{p.label}</option>)}
             </Select>
           </div>
         </div>
@@ -621,14 +622,14 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
         <div><Label>Espèce CITES saisie</Label>
           <Select value={data.citesSpecies||''} onChange={e=>update('citesSpecies',e.target.value)} accent="#009460">
             <option value="">-- Espèce CITES --</option>
-            {ESPECES_CITES.map((s:any)=><option key={s.nom} value={s.nom}>{s.nom} ({s.classe}) — Annexe {s.annexe}</option>)}
+            {ESPECES_CITES.map((s:string)=><option key={s} value={s}>{s}</option>)}
           </Select>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div><Label>Grade agent</Label>
             <Select value={data.grade||''} onChange={e=>update('grade',e.target.value)} accent="#009460">
               <option value="">-- Grade --</option>
-              {grades.map((g:any)=><option key={g.id} value={g.id}>{g.label}</option>)}
+              {grades.map((g:string)=><option key={g} value={g}>{g}</option>)}
             </Select>
           </div>
           <div><Label>Quantité saisie</Label><Input value={data.seizureQuantity||''} onChange={e=>update('seizureQuantity',e.target.value)} placeholder="kg / unités" accent="#009460"/></div>
@@ -726,10 +727,10 @@ const NodePanel: React.FC<NodePanelProps> = ({ node, onClose, onSave, activeCorp
           </button>
           {showProcedure && (
             <div className="space-y-1 mt-2">
-              {(PROCEDURES[activeCorps.replace('SECURITE_ETAT','SECURITE_ETAT')] || []).map((p:string) => (
-                <div key={p} className="text-xs text-slate-400 flex items-center gap-2">
+              {((PROCEDURES as any)[activeCorps] || []).map((p:any) => (
+                <div key={p.id || p} className="text-xs text-slate-400 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0" style={{ background: accent }}/>
-                  {p}
+                  {p.label || p}
                 </div>
               ))}
             </div>
