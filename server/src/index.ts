@@ -9,6 +9,7 @@ import authRouter from './routes/auth'
 import casesRouter from './routes/cases'
 import nodesRouter from './routes/nodes'
 import edgesRouter from './routes/edges'
+import locationsRouter from './routes/locations'
 
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -27,6 +28,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/cases', casesRouter)
 app.use('/api/cases/:caseId/nodes', nodesRouter)
 app.use('/api/cases/:caseId/edges', edgesRouter)
+app.use('/api/locations', locationsRouter)
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
@@ -44,3 +46,4 @@ const PORT = Number(process.env.PORT) || 3001
 server.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`)
 })
+
